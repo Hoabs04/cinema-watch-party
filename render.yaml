@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: cinema-watch-party
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: ADMIN_SECRET
+        generateValue: true

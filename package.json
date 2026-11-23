@@ -1,0 +1,17 @@
+{
+  "name": "cinema-watch-party",
+  "version": "1.0.0",
+  "description": "Web Rạp Phim Trực Tuyến (Watch Party) hỗ trợ YouTube, MP4/HLS, Iframe, Chat & Voice Chat WebRTC",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "build": "npm run install:all && npm --prefix client run build",
+    "start": "node server/index.js",
+    "dev:server": "node server/index.js",
+    "dev:client": "npm --prefix client run dev",
+    "test": "node --test server/tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
