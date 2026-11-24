@@ -80,7 +80,7 @@ export default function Lobby({
               <Film className="w-5 h-5 text-white stroke-[2.4]" />
             </div>
             <div>
-              <span className="font-black text-lg tracking-tight text-white drop-shadow">
+              <span className="font-black text-base sm:text-lg tracking-tight text-white drop-shadow whitespace-nowrap">
                 RẠP PHIM ONLINE
               </span>
               <span className="hidden sm:inline-block ml-2.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/15 text-teal-100 border border-white/25 backdrop-blur-md">
@@ -92,7 +92,7 @@ export default function Lobby({
           <button
             type="button"
             onClick={onOpenAdminModal}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 cursor-pointer ${
               isAdmin
                 ? 'bg-emerald-400/20 border border-emerald-300/40 text-emerald-100 shadow-[0_3px_0_rgba(6,95,70,0.45)]'
                 : 'btn-3d-soft text-white'
@@ -217,7 +217,7 @@ export default function Lobby({
                         key={cap}
                         type="button"
                         onClick={() => handleCapacityClick(cap)}
-                        className={`relative px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                        className={`relative min-h-[42px] px-2 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1 cursor-pointer transition-all ${
                           isSelected
                             ? 'btn-3d-pink'
                             : isLocked

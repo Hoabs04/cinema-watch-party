@@ -36,6 +36,7 @@ import {
   Share2,
   ChevronDown,
   ChevronUp,
+  Settings,
 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import ChibiMascot from './ChibiMascot';
@@ -105,6 +106,7 @@ export default function Room({
   const [showMobileControls, setShowMobileControls] = useState(
     () => !room?.videoState?.url
   );
+  const [showMobileSettings, setShowMobileSettings] = useState(false);
 
   const chatEndRef = useRef(null);
   const soundEnabledRef = useRef(soundEnabled);
@@ -367,6 +369,12 @@ export default function Room({
     socket?.emit('change-video', parsed, (res) => {
       if (res?.error) {
         setUrlError(res.error);
+      } else {
+        setShowYtSearch(false);
+        setShowMobileControls(false);
+        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+          setActiveTab('chat');
+        }
       }
     });
   };
@@ -504,14 +512,14 @@ export default function Room({
 
   return (
     <div className="h-[100dvh] lg:h-screen flex flex-col cinema-bg-pastel text-white overflow-hidden">
-      {/* Top Cinema Header (1-row horizontal scroll on mobile, wrapped on desktop) */}
+      {/* Top Cinema Header (fits cleanly within 390px on mobile; full controls on desktop) */}
       <header className="shrink-0 border-b border-white/20 bg-white/10 backdrop-blur-xl px-2.5 sm:px-5 py-2">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar lg:flex-wrap lg:justify-between">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 lg:flex-wrap">
           {/* Left: Brand + Room Code + Copy Invite Link + Member Count */}
-          <div className="flex items-center gap-2 shrink-0 lg:flex-wrap sm:gap-3">
-            <div className="flex items-center gap-2 pr-1">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400/90 to-emerald-500/90 border border-white/35 flex items-center justify-center shadow-[0_3px_0_rgba(17,94,89,0.6),0_6px_12px_rgba(20,184,166,0.3)]">
-                <Film className="w-4 h-4 text-white stroke-[2.5]" />
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-teal-400/90 to-emerald-500/90 border border-white/35 flex items-center justify-center shadow-[0_3px_0_rgba(17,94,89,0.6),0_6px_12px_rgba(20,184,166,0.3)]">
+                <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white stroke-[2.5]" />
               </div>
               <span className="font-black text-sm tracking-tight text-white hidden sm:inline">
                 RẠP PHIM
@@ -519,11 +527,11 @@ export default function Room({
             </div>
 
             {/* Room Code Badge */}
-            <div className="flex items-center gap-1.5 bg-white/12 border border-white/25 backdrop-blur-md rounded-xl px-3 py-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-200">
+            <div className="flex items-center gap-1 bg-white/12 border border-white/25 backdrop-blur-md rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 shrink-0">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-teal-200 hidden sm:inline">
                 Mã phòng:
               </span>
-              <span className="font-mono font-black text-sm tracking-widest text-white">
+              <span className="font-mono font-black text-xs sm:text-sm tracking-wider sm:tracking-widest text-white">
                 {room?.roomId}
               </span>
             </div>
@@ -532,7 +540,7 @@ export default function Room({
             <button
               type="button"
               onClick={handleCopyInviteLink}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 copiedLink
                   ? 'bg-emerald-400/20 border border-emerald-300/40 text-emerald-100 shadow-[0_3px_0_rgba(6,95,70,0.45)]'
                   : 'btn-3d-soft text-white'
@@ -542,13 +550,14 @@ export default function Room({
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Đã copy link mời!</span>
+                  <span className="hidden sm:inline">Đã copy link mời!</span>
+                  <span className="sm:hidden">Đã copy</span>
                 </>
               ) : (
                 <>
-                  <Share2 className="w-3.5 h-3.5 text-teal-200 sm:hidden" />
+                  <Share2 className="w-3 h-3 text-teal-200 sm:hidden" />
                   <Copy className="w-3.5 h-3.5 text-teal-200 hidden sm:block" />
-                  <span className="sm:hidden">Mời bạn</span>
+                  <span className="sm:hidden">Mời</span>
                   <span className="hidden sm:inline">Copy Link Mời</span>
                 </>
               )}
@@ -556,21 +565,33 @@ export default function Room({
 
             {/* Member Count Badge */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border backdrop-blur-md ${
+              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border backdrop-blur-md shrink-0 ${
                 users.length >= (room?.maxUsers || 4)
                   ? 'bg-rose-500/25 border-rose-300/40 text-rose-100'
                   : 'bg-white/12 border-white/25 text-white'
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-teal-200" />
+              <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-teal-200" />
               <span>
-                {users.length}/{room?.maxUsers || 4} người
+                {users.length}/{room?.maxUsers || 4}
+                <span className="hidden sm:inline"> người</span>
               </span>
             </div>
           </div>
 
-          {/* Right: Capacity Upgrade + Control Permission Toggle + Leave Room */}
-          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap lg:flex-wrap">
+          {/* Right: Mobile Settings + Desktop Full Controls + Leave Room */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap lg:flex-wrap">
+            {/* Mobile Settings Drawer Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowMobileSettings(true)}
+              className="lg:hidden flex items-center gap-1 px-2 py-1 rounded-xl btn-3d-soft text-white text-[11px] font-bold cursor-pointer"
+              title="Cài đặt phòng, Admin & Đèn rạp"
+            >
+              <Settings className="w-3.5 h-3.5 text-teal-200" />
+            </button>
+
+            <div className="hidden lg:flex items-center gap-2 flex-wrap">
             {capacityMsg && (
               <span className="text-xs font-bold text-white bg-teal-500/30 border border-teal-300/40 px-2.5 py-1 rounded-lg backdrop-blur-md">
                 {capacityMsg}
@@ -709,47 +730,160 @@ export default function Room({
               </button>
             )}
 
+            </div>
+
             <button
               type="button"
               onClick={onLeaveRoom}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/25 hover:bg-rose-500/35 border border-rose-300/40 text-white text-xs font-bold shadow-[0_3px_0_rgba(136,19,55,0.5)] active:translate-y-0.5 transition-all cursor-pointer backdrop-blur-md"
+              className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-rose-500/25 hover:bg-rose-500/35 border border-rose-300/40 text-white text-[11px] sm:text-xs font-bold shadow-[0_3px_0_rgba(136,19,55,0.5)] active:translate-y-0.5 transition-all cursor-pointer backdrop-blur-md"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Rời phòng</span>
+              <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Rời phòng</span>
+              <span className="sm:hidden">Rời</span>
             </button>
           </div>
         </div>
       </header>
 
+      {/* Mobile Settings Modal (Admin, Permissions, Sound, Live BG, Theatre Mode) */}
+      {showMobileSettings && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-3 lg:hidden"
+          onClick={() => setShowMobileSettings(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl cinema-card-3d p-4 space-y-3 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-teal-200" />
+                <span className="font-extrabold text-sm">Cài đặt Rạp Phim</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileSettings(false)}
+                className="p-1.5 rounded-lg text-white/70 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {capacityMsg && (
+              <div className="text-xs font-bold text-teal-100 bg-teal-500/25 border border-teal-300/35 px-3 py-1.5 rounded-xl">
+                {capacityMsg}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {isAdmin ? (
+                <div className="flex items-center justify-between bg-emerald-400/15 border border-emerald-300/35 rounded-xl px-3 py-2">
+                  <span className="text-xs font-bold text-emerald-100 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                    Mở rộng phòng:
+                  </span>
+                  <select
+                    value={room?.maxUsers || 4}
+                    onChange={handleCapacityChange}
+                    className="bg-slate-900/90 border border-emerald-300/40 text-white text-xs font-bold rounded-lg px-2.5 py-1 focus:outline-none"
+                  >
+                    {CAPACITIES.map((cap) => (
+                      <option key={cap} value={cap} disabled={cap < users.length}>
+                        {cap} người
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileSettings(false);
+                    onOpenAdminModal();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl btn-3d-soft text-teal-100 text-xs font-bold cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-teal-200" />
+                  <span>Đăng nhập Admin để mở rộng 6 – 20 ghế</span>
+                </button>
+              )}
+
+              {canModerate && (
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleControlPermission}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border cursor-pointer ${
+                      room?.allowAllControl
+                        ? 'bg-emerald-400/20 border-emerald-300/40 text-emerald-100'
+                        : 'bg-white/10 border-white/20 text-white'
+                    }`}
+                  >
+                    <span>Quyền Play / Pause / Tua</span>
+                    <span>{room?.allowAllControl ? 'Mọi người' : 'Chỉ chủ phòng'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleAddVideoPermission}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border cursor-pointer ${
+                      room?.allowAllAddVideo
+                        ? 'bg-sky-400/20 border-sky-300/40 text-sky-100'
+                        : 'bg-white/10 border-white/20 text-white'
+                    }`}
+                  >
+                    <span>Quyền thêm link phim</span>
+                    <span>{room?.allowAllAddVideo ? 'Mọi người' : 'Đang khóa'}</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled((s) => !s)}
+                  className="flex flex-col items-center gap-1 py-2 rounded-xl btn-3d-soft text-[11px] font-bold text-white cursor-pointer"
+                >
+                  {soundEnabled ? <Bell className="w-4 h-4 text-teal-200" /> : <BellOff className="w-4 h-4 text-white/50" />}
+                  <span>{soundEnabled ? 'Chuông: Bật' : 'Chuông: Tắt'}</span>
+                </button>
+
+                {onToggleLiveBg && (
+                  <button
+                    type="button"
+                    onClick={onToggleLiveBg}
+                    className="flex flex-col items-center gap-1 py-2 rounded-xl btn-3d-soft text-[11px] font-bold text-white cursor-pointer"
+                  >
+                    <Sparkles className={`w-4 h-4 ${liveBgEnabled ? 'text-teal-200' : 'text-white/40'}`} />
+                    <span>{liveBgEnabled ? 'Nền động' : 'Nền tĩnh'}</span>
+                  </button>
+                )}
+
+                {onToggleTheatreMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onToggleTheatreMode();
+                      setShowMobileSettings(false);
+                    }}
+                    className="flex flex-col items-center gap-1 py-2 rounded-xl btn-3d-soft text-[11px] font-bold text-white cursor-pointer"
+                  >
+                    {theatreMode ? <Sun className="w-4 h-4 text-amber-200" /> : <Moon className="w-4 h-4 text-teal-200" />}
+                    <span>{theatreMode ? 'Bật đèn' : 'Đèn rạp'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Layout: Left Cinema Stage + Right Sidebar */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-        {/* LEFT COLUMN: Main Cinema Stage (sticky/fixed top on mobile) */}
+        {/* LEFT COLUMN: Main Cinema Stage (VideoPlayer always pinned cleanly on mobile) */}
         <div className="shrink-0 lg:flex-1 flex flex-col min-w-0 p-2 sm:p-4 gap-2 sm:gap-3 lg:overflow-y-auto">
-          {/* Mobile Quick Toggle Bar for URL / Search Controls */}
-          <div className="flex lg:hidden items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setShowMobileControls((s) => !s)}
-              className="flex-1 flex items-center justify-between px-3 py-1.5 rounded-2xl cinema-card-3d text-xs font-bold text-teal-100 cursor-pointer"
-            >
-              <span className="flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5 text-teal-200" />
-                <span>Dán link phim / Tìm YouTube</span>
-              </span>
-              {showMobileControls ? (
-                <ChevronUp className="w-4 h-4 text-teal-200" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-teal-200" />
-              )}
-            </button>
-          </div>
-
-          {/* URL Input Bar + Sample Quick Buttons */}
-          <div
-            className={`${
-              showMobileControls ? 'block' : 'hidden lg:block'
-            } rounded-3xl cinema-card-3d p-2.5 sm:p-3 space-y-2.5 shrink-0`}
-          >
+          {/* Desktop URL Input Bar + Sample Quick Buttons (hidden on mobile; mobile uses the "Tìm & Link" tab below VideoPlayer) */}
+          <div className="hidden lg:block rounded-3xl cinema-card-3d p-3 space-y-2.5 shrink-0">
             <form
               onSubmit={handleUrlSubmit}
               className="flex flex-wrap items-center gap-2"
@@ -759,7 +893,10 @@ export default function Room({
                 <input
                   type="text"
                   value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
+                  onChange={(e) => {
+                    setUrlInput(e.target.value);
+                    if (urlError) setUrlError('');
+                  }}
                   disabled={!canAddVideo}
                   placeholder={
                     canAddVideo
@@ -1112,8 +1249,19 @@ export default function Room({
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab('media')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                activeTab === 'media'
+                  ? 'bg-white/20 text-white'
+                  : 'text-white/60'
+              }`}
+            >
+              Tìm &amp; Link
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('voice')}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === 'voice'
                   ? 'bg-white/20 text-white'
                   : 'text-white/60'
@@ -1124,7 +1272,7 @@ export default function Room({
             <button
               type="button"
               onClick={toggleMic}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer ${
                 isMuted
                   ? 'bg-white/10 text-white/80'
                   : 'bg-emerald-500/80 text-white'
@@ -1132,9 +1280,194 @@ export default function Room({
               title={isMuted ? 'Bật Mic' : 'Tắt Mic'}
             >
               {isMuted ? <MicOff className="w-3.5 h-3.5 text-rose-300" /> : <Mic className="w-3.5 h-3.5" />}
-              <span>{isMuted ? 'Mic' : 'Đang bật'}</span>
+              <span>{isMuted ? 'Mic' : 'Bật'}</span>
             </button>
           </div>
+
+          {/* SECTION 0 (Mobile Only): Tìm & Dán Link Phim + Hàng đợi */}
+          {activeTab === 'media' && (
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 lg:hidden">
+              <form onSubmit={handleUrlSubmit} className="space-y-2">
+                <div className="relative">
+                  <Link2 className="w-4 h-4 text-teal-200/80 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={urlInput}
+                    onChange={(e) => {
+                      setUrlInput(e.target.value);
+                      if (urlError) setUrlError('');
+                    }}
+                    disabled={!canAddVideo}
+                    placeholder={
+                      canAddVideo
+                        ? 'Dán link YouTube, FB, Drive, TikTok, .mp4, .m3u8...'
+                        : 'Chỉ chủ phòng được thêm link...'
+                    }
+                    className="w-full pl-9 pr-3 py-2 rounded-xl input-3d focus:outline-none text-xs text-white placeholder-white/45 disabled:opacity-60"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="submit"
+                    disabled={!canAddVideo}
+                    className="py-2 px-3 rounded-xl btn-3d-pink disabled:opacity-50 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Chiếu Phim</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canAddVideo}
+                    onClick={handleAddToPlaylist}
+                    className="py-2 px-3 rounded-xl btn-3d-soft disabled:opacity-50 font-bold text-xs text-white flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ListPlus className="w-3.5 h-3.5 text-teal-200" />
+                    <span>+ Hàng đợi ({(room?.playlist || []).length})</span>
+                  </button>
+                </div>
+              </form>
+
+              {urlError && (
+                <div className="rounded-xl bg-rose-500/25 border border-rose-300/40 px-3 py-2 flex items-center gap-2 text-xs font-semibold text-white">
+                  <AlertCircle className="w-4 h-4 text-rose-200 shrink-0" />
+                  <span>{urlError}</span>
+                </div>
+              )}
+
+              {/* Mobile YouTube Search */}
+              {canAddVideo && (
+                <div className="rounded-2xl bg-slate-950/35 border border-white/15 p-2.5 space-y-2">
+                  <div className="text-xs font-bold text-teal-100 flex items-center gap-1.5">
+                    <Search className="w-3.5 h-3.5 text-teal-200" />
+                    <span>Tìm YouTube ngay trong rạp</span>
+                  </div>
+                  <form onSubmit={handleSearchYouTube} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={ytQuery}
+                      onChange={(e) => setYtQuery(e.target.value)}
+                      placeholder="Gõ tên phim, tập phim, nhạc..."
+                      className="flex-1 px-3 py-1.5 rounded-xl input-3d text-xs text-white placeholder-white/45 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={ytSearching}
+                      className="px-3 py-1.5 rounded-xl btn-3d-pink text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+                    >
+                      {ytSearching ? '...' : 'Tìm'}
+                    </button>
+                  </form>
+                  {ytSearchError && (
+                    <p className="text-[11px] text-rose-200 font-semibold">{ytSearchError}</p>
+                  )}
+                  {ytResults.length > 0 && (
+                    <div className="space-y-1.5">
+                      {ytResults.map((item) => (
+                        <div
+                          key={`m-${item.videoId}`}
+                          className="flex items-center justify-between gap-2 rounded-xl bg-white/10 border border-white/15 p-1.5 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img
+                              src={item.thumbnail}
+                              alt=""
+                              className="w-14 h-9 rounded-lg object-cover shrink-0 bg-black"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-bold text-white truncate text-[11px]">{item.title}</div>
+                              <div className="text-[10px] text-teal-200/80 truncate">
+                                {item.channel} {item.duration ? `• ${item.duration}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUrlInput(item.url);
+                                applyVideoUrl(item.url);
+                              }}
+                              className="px-2 py-1 rounded-lg btn-3d-pink text-[10px] font-bold cursor-pointer"
+                            >
+                              Chiếu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                socket?.emit('add-to-playlist', {
+                                  url: item.url,
+                                  type: 'youtube',
+                                  videoId: item.videoId,
+                                  title: item.title,
+                                });
+                              }}
+                              className="px-2 py-1 rounded-lg btn-3d-soft text-[10px] font-bold text-white cursor-pointer"
+                            >
+                              + Chờ
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mobile Queue List */}
+              {(room?.playlist || []).length > 0 && (
+                <div className="rounded-2xl bg-slate-950/35 border border-white/15 p-2.5 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-teal-100">
+                    <span>Hàng đợi ({room.playlist.length})</span>
+                    {(canControl || canAddVideo) && (
+                      <button
+                        type="button"
+                        onClick={() => handlePlayNext()}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg btn-3d-pink text-[10px] font-bold cursor-pointer"
+                      >
+                        <SkipForward className="w-3 h-3" />
+                        Phát tiếp
+                      </button>
+                    )}
+                  </div>
+                  {room.playlist.map((item, idx) => (
+                    <div
+                      key={`mq-${item.id}`}
+                      className="flex items-center justify-between gap-2 rounded-xl bg-white/10 border border-white/15 px-2.5 py-1.5 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-white truncate text-[11px]">
+                          {idx + 1}. {item.title}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {(canControl || canAddVideo) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handlePlayNext(item.id);
+                              setActiveTab('chat');
+                            }}
+                            className="p-1.5 rounded-lg bg-teal-500/25 text-teal-100 cursor-pointer"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                          </button>
+                        )}
+                        {canAddVideo && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePlaylistItem(item.id)}
+                            className="p-1.5 rounded-lg bg-rose-500/20 text-rose-200 cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* SECTION 1: Voice Chat & Thành Viên */}
           <div
@@ -1322,7 +1655,7 @@ export default function Room({
           {/* SECTION 2: Phòng Chat */}
           <div
             className={`flex-1 flex flex-col min-h-0 ${
-              activeTab === 'voice' ? 'hidden lg:flex' : 'flex'
+              activeTab === 'voice' || activeTab === 'media' ? 'hidden lg:flex' : 'flex'
             }`}
           >
             {/* Chat Header */}
@@ -1353,7 +1686,7 @@ export default function Room({
             {showPollForm && (
               <form
                 onSubmit={handleCreatePoll}
-                className="p-2.5 border-b border-white/15 bg-slate-950/35 space-y-2 shrink-0"
+                className="p-2.5 border-b border-white/15 bg-slate-950/35 space-y-2 max-h-36 overflow-y-auto shrink-0"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-teal-200">
@@ -1412,7 +1745,7 @@ export default function Room({
 
             {/* Active Poll Card */}
             {room?.activePoll && (
-              <div className="p-2.5 border-b border-white/15 bg-teal-500/15 space-y-1.5 shrink-0">
+              <div className="p-2.5 border-b border-white/15 bg-teal-500/15 space-y-1.5 max-h-36 overflow-y-auto shrink-0">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-extrabold text-white">
                     📊 {room.activePoll.question}

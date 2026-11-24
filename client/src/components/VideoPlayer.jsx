@@ -632,15 +632,16 @@ export function VideoPlayer({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {isLocalScreen && onStopScreenShare && (
             <button
               type="button"
               onClick={onStopScreenShare}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500/30 hover:bg-rose-500/45 border border-rose-300/45 px-3 py-1.5 text-xs font-bold text-white cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-rose-500/30 hover:bg-rose-500/45 border border-rose-300/45 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-white whitespace-nowrap cursor-pointer"
             >
               <MonitorOff className="h-3.5 w-3.5" />
-              Dừng chiếu màn hình
+              <span className="hidden sm:inline">Dừng chiếu màn hình</span>
+              <span className="sm:hidden">Dừng</span>
             </button>
           )}
 
@@ -649,10 +650,10 @@ export function VideoPlayer({
               type="button"
               onClick={handleManualResync}
               title="Đồng bộ lại thời gian thực với phòng chiếu"
-              className="inline-flex items-center gap-1.5 rounded-xl btn-3d-soft px-3 py-1.5 text-xs font-bold text-white cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl btn-3d-soft px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold text-white whitespace-nowrap cursor-pointer"
             >
-              <RefreshCw className="h-3.5 w-3.5 text-teal-200" />
-              Đồng bộ lại
+              <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-teal-200 shrink-0" />
+              <span>Đồng bộ<span className="hidden sm:inline"> lại</span></span>
             </button>
           )}
 
@@ -661,10 +662,10 @@ export function VideoPlayer({
               href={videoState.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-xl btn-3d-soft px-2.5 py-1.5 text-xs font-bold text-white"
+              className="inline-flex items-center gap-1 rounded-xl btn-3d-soft px-2 sm:px-2.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold text-white whitespace-nowrap"
               title="Mở link gốc trong tab mới"
             >
-              <ExternalLink className="h-3.5 w-3.5 text-teal-200" />
+              <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-teal-200 shrink-0" />
               <span className="hidden sm:inline">Link gốc</span>
             </a>
           )}
