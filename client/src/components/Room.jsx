@@ -34,6 +34,8 @@ import {
   MonitorOff,
   Search,
   Share2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import ChibiMascot from './ChibiMascot';
@@ -98,6 +100,9 @@ export default function Room({
   const [ytResults, setYtResults] = useState([]);
   const [ytSearching, setYtSearching] = useState(false);
   const [ytSearchError, setYtSearchError] = useState('');
+  const [showMobileControls, setShowMobileControls] = useState(
+    () => !room?.videoState?.url
+  );
 
   const chatEndRef = useRef(null);
   const soundEnabledRef = useRef(soundEnabled);
@@ -497,11 +502,11 @@ export default function Room({
 
   return (
     <div className="h-[100dvh] lg:h-screen flex flex-col cinema-bg-pastel text-white overflow-hidden">
-      {/* Top Cinema Header */}
-      <header className="shrink-0 border-b border-white/20 bg-white/10 backdrop-blur-xl px-3 sm:px-5 py-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
+      {/* Top Cinema Header (1-row horizontal scroll on mobile, wrapped on desktop) */}
+      <header className="shrink-0 border-b border-white/20 bg-white/10 backdrop-blur-xl px-2.5 sm:px-5 py-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar lg:flex-wrap lg:justify-between">
           {/* Left: Brand + Room Code + Copy Invite Link + Member Count */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 shrink-0 lg:flex-wrap sm:gap-3">
             <div className="flex items-center gap-2 pr-1">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400/90 to-emerald-500/90 border border-white/35 flex items-center justify-center shadow-[0_3px_0_rgba(17,94,89,0.6),0_6px_12px_rgba(20,184,166,0.3)]">
                 <Film className="w-4 h-4 text-white stroke-[2.5]" />
@@ -563,7 +568,7 @@ export default function Room({
           </div>
 
           {/* Right: Capacity Upgrade + Control Permission Toggle + Leave Room */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap lg:flex-wrap">
             {capacityMsg && (
               <span className="text-xs font-bold text-white bg-teal-500/30 border border-teal-300/40 px-2.5 py-1 rounded-lg backdrop-blur-md">
                 {capacityMsg}
@@ -718,8 +723,31 @@ export default function Room({
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* LEFT COLUMN: Main Cinema Stage (sticky/fixed top on mobile) */}
         <div className="shrink-0 lg:flex-1 flex flex-col min-w-0 p-2 sm:p-4 gap-2 sm:gap-3 lg:overflow-y-auto">
+          {/* Mobile Quick Toggle Bar for URL / Search Controls */}
+          <div className="flex lg:hidden items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setShowMobileControls((s) => !s)}
+              className="flex-1 flex items-center justify-between px-3 py-1.5 rounded-2xl cinema-card-3d text-xs font-bold text-teal-100 cursor-pointer"
+            >
+              <span className="flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5 text-teal-200" />
+                <span>Dán link phim / Tìm YouTube</span>
+              </span>
+              {showMobileControls ? (
+                <ChevronUp className="w-4 h-4 text-teal-200" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-teal-200" />
+              )}
+            </button>
+          </div>
+
           {/* URL Input Bar + Sample Quick Buttons */}
-          <div className="rounded-3xl cinema-card-3d p-3 space-y-2.5 shrink-0">
+          <div
+            className={`${
+              showMobileControls ? 'block' : 'hidden lg:block'
+            } rounded-3xl cinema-card-3d p-2.5 sm:p-3 space-y-2.5 shrink-0`}
+          >
             <form
               onSubmit={handleUrlSubmit}
               className="flex flex-wrap items-center gap-2"
