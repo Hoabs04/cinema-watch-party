@@ -32,6 +32,8 @@ import {
   X,
   MonitorUp,
   MonitorOff,
+  Search,
+  Share2,
 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import ChibiMascot from './ChibiMascot';
@@ -91,6 +93,11 @@ export default function Room({
   const [showPollForm, setShowPollForm] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [showYtSearch, setShowYtSearch] = useState(false);
+  const [ytQuery, setYtQuery] = useState('');
+  const [ytResults, setYtResults] = useState([]);
+  const [ytSearching, setYtSearching] = useState(false);
+  const [ytSearchError, setYtSearchError] = useState('');
 
   const chatEndRef = useRef(null);
   const soundEnabledRef = useRef(soundEnabled);
@@ -245,9 +252,28 @@ export default function Room({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleCopyInviteLink = () => {
+  const handleCopyInviteLink = async () => {
     if (!room?.roomId) return;
     const inviteUrl = `${window.location.origin}?room=${room.roomId}`;
+
+    // Use native Share Sheet on mobile (Zalo, Messenger, Telegram...) if available
+    if (
+      typeof navigator !== 'undefined' &&
+      navigator.share &&
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    ) {
+      try {
+        await navigator.share({
+          title: 'Rạp Phim Online - Xem phim cùng mình!',
+          text: `Vào phòng chiếu ${room.roomId} xem phim cùng mình nhé! 🎬🍿`,
+          url: inviteUrl,
+        });
+        return;
+      } catch {
+        // User cancelled or fallback to clipboard
+      }
+    }
+
     navigator.clipboard
       ?.writeText(inviteUrl)
       .then(() => {
@@ -402,6 +428,31 @@ export default function Room({
     );
   };
 
+  const handleSearchYouTube = async (e) => {
+    e.preventDefault();
+    const q = ytQuery.trim();
+    if (!q) return;
+    setYtSearching(true);
+    setYtSearchError('');
+    try {
+      const res = await fetch(`/api/youtube-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setYtSearchError(data.error || 'Không tìm thấy kết quả!');
+        setYtResults([]);
+      } else {
+        setYtResults(data.results || []);
+        if ((data.results || []).length === 0) {
+          setYtSearchError('Không tìm thấy video phù hợp. Hãy thử từ khóa khác!');
+        }
+      }
+    } catch {
+      setYtSearchError('Lỗi kết nối khi tìm YouTube!');
+    } finally {
+      setYtSearching(false);
+    }
+  };
+
   const handleSendReaction = (emoji) => {
     if (!socket) return;
     socket.emit('send-reaction', { emoji });
@@ -445,7 +496,7 @@ export default function Room({
   };
 
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col cinema-bg-pastel text-white overflow-x-hidden lg:overflow-hidden">
+    <div className="h-[100dvh] lg:h-screen flex flex-col cinema-bg-pastel text-white overflow-hidden">
       {/* Top Cinema Header */}
       <header className="shrink-0 border-b border-white/20 bg-white/10 backdrop-blur-xl px-3 sm:px-5 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -488,8 +539,10 @@ export default function Room({
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-teal-200" />
-                  <span>Copy Link Mời</span>
+                  <Share2 className="w-3.5 h-3.5 text-teal-200 sm:hidden" />
+                  <Copy className="w-3.5 h-3.5 text-teal-200 hidden sm:block" />
+                  <span className="sm:hidden">Mời bạn</span>
+                  <span className="hidden sm:inline">Copy Link Mời</span>
                 </>
               )}
             </button>
@@ -663,8 +716,8 @@ export default function Room({
 
       {/* Main Layout: Left Cinema Stage + Right Sidebar */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-        {/* LEFT COLUMN: Main Cinema Stage */}
-        <div className="flex-1 flex flex-col min-w-0 p-3 sm:p-4 gap-3 overflow-y-auto">
+        {/* LEFT COLUMN: Main Cinema Stage (sticky/fixed top on mobile) */}
+        <div className="shrink-0 lg:flex-1 flex flex-col min-w-0 p-2 sm:p-4 gap-2 sm:gap-3 lg:overflow-y-auto">
           {/* URL Input Bar + Sample Quick Buttons */}
           <div className="rounded-3xl cinema-card-3d p-3 space-y-2.5 shrink-0">
             <form
@@ -707,6 +760,22 @@ export default function Room({
                 <span>+ Hàng đợi</span>
               </button>
 
+              {canAddVideo && (
+                <button
+                  type="button"
+                  onClick={() => setShowYtSearch((s) => !s)}
+                  className={`px-3.5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+                    showYtSearch
+                      ? 'bg-teal-400/30 border border-teal-300/50 text-white'
+                      : 'btn-3d-soft text-teal-100'
+                  }`}
+                  title="Tìm video YouTube trực tiếp ngay trong rạp (rất tiện trên điện thoại)"
+                >
+                  <Search className="w-4 h-4 text-teal-200" />
+                  <span>Tìm YouTube</span>
+                </button>
+              )}
+
               {(canControl || canAddVideo) && (
                 <button
                   type="button"
@@ -735,7 +804,7 @@ export default function Room({
 
             {/* Quick Sample Video Links + Playlist Drawer Toggle */}
             <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="hidden sm:flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] font-bold text-teal-200 mr-1">
                   Phim thử nhanh 1-click:
                 </span>
@@ -761,6 +830,93 @@ export default function Room({
                 <span>Hàng đợi ({(room?.playlist || []).length})</span>
               </button>
             </div>
+
+            {/* In-App YouTube Search Drawer */}
+            {showYtSearch && canAddVideo && (
+              <div className="rounded-2xl bg-slate-950/45 border border-white/20 p-2.5 space-y-2">
+                <form onSubmit={handleSearchYouTube} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={ytQuery}
+                    onChange={(e) => setYtQuery(e.target.value)}
+                    placeholder="Gõ tên phim, tập phim, bài hát cần tìm trên YouTube..."
+                    className="flex-1 px-3 py-2 rounded-xl input-3d text-xs text-white placeholder-white/45 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={ytSearching}
+                    className="px-3.5 py-2 rounded-xl btn-3d-pink text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+                  >
+                    {ytSearching ? 'Đang tìm...' : 'Tìm'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowYtSearch(false)}
+                    className="p-1.5 text-white/60 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </form>
+
+                {ytSearchError && (
+                  <p className="text-[11px] text-rose-200 font-semibold">{ytSearchError}</p>
+                )}
+
+                {ytResults.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-1.5">
+                    {ytResults.map((item) => (
+                      <div
+                        key={item.videoId}
+                        className="flex items-center justify-between gap-2 rounded-xl bg-white/10 border border-white/15 p-1.5 text-xs"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <img
+                            src={item.thumbnail}
+                            alt=""
+                            className="w-16 h-10 rounded-lg object-cover shrink-0 bg-black"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-bold text-white truncate">{item.title}</div>
+                            <div className="text-[10px] text-teal-200/80 truncate">
+                              {item.channel} {item.duration ? `• ${item.duration}` : ''}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUrlInput(item.url);
+                              applyVideoUrl(item.url);
+                              setShowYtSearch(false);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg btn-3d-pink text-[11px] font-bold cursor-pointer"
+                          >
+                            Chiếu
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              socket?.emit('add-to-playlist', {
+                                url: item.url,
+                                type: 'youtube',
+                                videoId: item.videoId,
+                                title: item.title,
+                              });
+                              setShowPlaylist(true);
+                            }}
+                            className="px-2 py-1.5 rounded-lg btn-3d-soft text-[11px] font-bold text-white cursor-pointer"
+                            title="Thêm vào hàng đợi"
+                          >
+                            + Chờ
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {showPlaylist && (
               <div className="rounded-2xl bg-slate-950/35 border border-white/15 p-2.5 space-y-2">
@@ -910,7 +1066,7 @@ export default function Room({
 
         {/* RIGHT COLUMN: Sidebar (Voice Chat + Members & Room Chat) */}
         {!theatreMode && (
-        <aside className="w-full lg:w-96 xl:w-[410px] shrink-0 border-t lg:border-t-0 lg:border-l border-white/20 bg-white/10 backdrop-blur-xl flex flex-col h-[540px] lg:h-full">
+        <aside className="flex-1 min-h-0 lg:flex-none w-full lg:w-96 xl:w-[410px] shrink-0 border-t lg:border-t-0 lg:border-l border-white/20 bg-white/10 backdrop-blur-xl flex flex-col lg:h-full">
           {/* Mobile Tab Switcher */}
           <div className="flex lg:hidden border-b border-white/15 bg-white/10 p-1.5 gap-1.5">
             <button

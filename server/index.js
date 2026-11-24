@@ -74,6 +74,82 @@ app.get('/api/resolve-url', async (req, res) => {
   }
 });
 
+// Tìm kiếm video YouTube công khai không cần API Key
+app.get('/api/youtube-search', async (req, res) => {
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (!q) {
+    return res.status(400).json({ error: 'Vui lòng nhập từ khóa tìm kiếm!' });
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&hl=vi`;
+    const response = await fetch(searchUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8'
+      }
+    });
+    clearTimeout(timeout);
+
+    const html = await response.text();
+    const marker = 'var ytInitialData = ';
+    const startIdx = html.indexOf(marker);
+    if (startIdx === -1) {
+      return res.json({ results: [] });
+    }
+    const jsonStart = startIdx + marker.length;
+    const endIdx = html.indexOf(';</script>', jsonStart);
+    if (endIdx === -1) {
+      return res.json({ results: [] });
+    }
+
+    const data = JSON.parse(html.slice(jsonStart, endIdx));
+    const sections =
+      data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
+        ?.sectionListRenderer?.contents || [];
+
+    const results = [];
+    for (const sec of sections) {
+      const items = sec?.itemSectionRenderer?.contents || [];
+      for (const item of items) {
+        const v = item?.videoRenderer;
+        if (!v || !v.videoId) continue;
+        const title =
+          v.title?.runs?.map((r) => r.text).join('') ||
+          v.title?.simpleText ||
+          'Video YouTube';
+        const channel =
+          v.ownerText?.runs?.[0]?.text ||
+          v.longBylineText?.runs?.[0]?.text ||
+          'YouTube';
+        const duration = v.lengthText?.simpleText || '';
+        const thumbnail =
+          v.thumbnail?.thumbnails?.[0]?.url ||
+          `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
+
+        results.push({
+          videoId: v.videoId,
+          title,
+          channel,
+          duration,
+          thumbnail,
+          url: `https://www.youtube.com/watch?v=${v.videoId}`
+        });
+        if (results.length >= 10) break;
+      }
+      if (results.length >= 10) break;
+    }
+
+    return res.json({ results });
+  } catch {
+    return res.status(500).json({ error: 'Không thể tìm kiếm YouTube lúc này, vui lòng thử lại!' });
+  }
+});
+
 // Admin Login API
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};
