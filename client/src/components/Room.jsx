@@ -30,12 +30,15 @@ import {
   BarChart2,
   Timer,
   X,
+  MonitorUp,
+  MonitorOff,
 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import ChibiMascot from './ChibiMascot';
 import RoamingChibis from './RoamingChibis';
 import { parseVideoUrl } from '../utils/videoParser';
 import { useVoiceChat } from '../hooks/useVoiceChat';
+import { useScreenShare } from '../hooks/useScreenShare';
 import { playChimeSound } from '../utils/soundFx';
 
 const CAPACITIES = [4, 6, 8, 10, 15, 20];
@@ -112,6 +115,22 @@ export default function Room({
     toggleMic,
     toggleDeafen,
   } = useVoiceChat({
+    socket,
+    roomId: room?.roomId,
+    currentUserId,
+    users,
+  });
+
+  // Initialize WebRTC Screen/Tab Share Hook
+  const {
+    isSharingScreen,
+    localScreenStream,
+    remoteScreenStream,
+    sharerInfo,
+    screenError,
+    startScreenShare,
+    stopScreenShare,
+  } = useScreenShare({
     socket,
     roomId: room?.roomId,
     currentUserId,
@@ -642,7 +661,7 @@ export default function Room({
                   disabled={!canAddVideo}
                   placeholder={
                     canAddVideo
-                      ? 'Dán link YouTube, link phim .mp4, .m3u8 hoặc link web embed (https://...) vào đây...'
+                      ? 'Dán link YouTube, Facebook, Google Drive, TikTok, .mp4, .m3u8 hoặc mã <iframe>...'
                       : 'Chỉ chủ phòng (hoặc khi được cấp quyền) mới được thêm link phim...'
                   }
                   className="w-full pl-10 pr-4 py-2.5 rounded-2xl input-3d focus:outline-none text-xs sm:text-sm font-medium text-white placeholder-white/45 disabled:opacity-60"
@@ -668,6 +687,31 @@ export default function Room({
                 <ListPlus className="w-4 h-4 text-teal-200" />
                 <span>+ Hàng đợi</span>
               </button>
+
+              {(canControl || canAddVideo) && (
+                <button
+                  type="button"
+                  onClick={isSharingScreen ? stopScreenShare : startScreenShare}
+                  className={`px-3.5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+                    isSharingScreen
+                      ? 'bg-rose-500/35 border border-rose-300/45 text-white'
+                      : 'btn-3d-soft text-teal-100'
+                  }`}
+                  title="Chiếu trực tiếp Tab Netflix, Facebook, hoặc Web phim bất kỳ kèm âm thanh"
+                >
+                  {isSharingScreen ? (
+                    <>
+                      <MonitorOff className="w-4 h-4 text-rose-200" />
+                      <span className="hidden sm:inline">Dừng chiếu</span>
+                    </>
+                  ) : (
+                    <>
+                      <MonitorUp className="w-4 h-4 text-emerald-300" />
+                      <span className="hidden sm:inline">Chiếu Tab/Màn hình</span>
+                    </>
+                  )}
+                </button>
+              )}
             </form>
 
             {/* Quick Sample Video Links + Playlist Drawer Toggle */}
@@ -763,10 +807,10 @@ export default function Room({
               </div>
             )}
 
-            {urlError && (
+            {(urlError || screenError) && (
               <div className="rounded-xl bg-rose-500/25 border border-rose-300/40 px-3 py-2 flex items-center gap-2 text-xs font-semibold text-white">
                 <AlertCircle className="w-4 h-4 text-rose-200 shrink-0" />
-                <span>{urlError}</span>
+                <span>{urlError || screenError}</span>
               </div>
             )}
           </div>
@@ -795,6 +839,11 @@ export default function Room({
               countdownValue={countdownValue}
               overlayMessages={messages.filter((m) => m.type === 'user')}
               theatreMode={theatreMode}
+              screenStream={localScreenStream || remoteScreenStream}
+              isLocalScreen={isSharingScreen}
+              sharerName={sharerInfo?.sharerName}
+              onStartScreenShare={startScreenShare}
+              onStopScreenShare={stopScreenShare}
             />
           </div>
 

@@ -9,7 +9,9 @@ import {
   Info,
   Play,
   Pause,
-  Radio
+  Radio,
+  MonitorUp,
+  MonitorOff
 } from 'lucide-react';
 
 // Global helper to load YouTube IFrame API once
@@ -59,11 +61,17 @@ export function VideoPlayer({
   reactions = [],
   countdownValue = null,
   overlayMessages = [],
-  theatreMode = false
+  theatreMode = false,
+  screenStream = null,
+  isLocalScreen = false,
+  sharerName = '',
+  onStartScreenShare,
+  onStopScreenShare
 }) {
   const ytContainerRef = useRef(null);
   const ytPlayerRef = useRef(null);
   const html5VideoRef = useRef(null);
+  const screenVideoRef = useRef(null);
   const hlsInstanceRef = useRef(null);
 
   const isRemoteSyncRef = useRef(false);
@@ -82,6 +90,16 @@ export function VideoPlayer({
   useEffect(() => {
     onVideoEndedRef.current = onVideoEnded;
   }, [onVideoEnded]);
+
+  useEffect(() => {
+    const el = screenVideoRef.current;
+    if (el && screenStream) {
+      el.srcObject = screenStream;
+      el.play().catch(() => {});
+    } else if (el) {
+      el.srcObject = null;
+    }
+  }, [screenStream]);
 
   useEffect(() => {
     onVideoActionRef.current = onVideoAction;
@@ -568,14 +586,18 @@ export function VideoPlayer({
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 font-bold text-teal-100 border border-white/25">
             <Radio className="h-3.5 w-3.5 animate-pulse text-teal-300" />
-            {videoState?.type === 'youtube'
+            {screenStream
+              ? `🖥️ Chiếu Màn Hình (${isLocalScreen ? 'Bạn' : sharerName || 'Thành viên'})`
+              : videoState?.type === 'youtube'
               ? 'YouTube Sync'
               : videoState?.type === 'hls'
               ? 'HLS Stream (.m3u8)'
               : videoState?.type === 'video'
               ? 'HTML5 Direct Video'
+              : videoState?.type === 'drm_blocked'
+              ? `${videoState.provider || 'DRM'} (Chặn nhúng)`
               : videoState?.type === 'iframe'
-              ? 'Web Embed (Iframe)'
+              ? `${videoState.provider || 'Web Embed'} (Iframe)`
               : 'Màn Hình Rạp Chiếu'}
           </span>
 
@@ -607,7 +629,18 @@ export function VideoPlayer({
         </div>
 
         <div className="flex items-center gap-2">
-          {hasVideo && videoState?.type !== 'iframe' && (
+          {isLocalScreen && onStopScreenShare && (
+            <button
+              type="button"
+              onClick={onStopScreenShare}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500/30 hover:bg-rose-500/45 border border-rose-300/45 px-3 py-1.5 text-xs font-bold text-white cursor-pointer"
+            >
+              <MonitorOff className="h-3.5 w-3.5" />
+              Dừng chiếu màn hình
+            </button>
+          )}
+
+          {!screenStream && hasVideo && videoState?.type !== 'iframe' && videoState?.type !== 'drm_blocked' && (
             <button
               type="button"
               onClick={handleManualResync}
@@ -636,6 +669,20 @@ export function VideoPlayer({
 
       {/* Main 16:9 Cinema Stage */}
       <div className="relative aspect-video w-full bg-black/55 select-none">
+        {/* 0. Live WebRTC Screen / Tab Share Stream */}
+        {screenStream ? (
+          <div className="relative h-full w-full bg-black">
+            <video
+              ref={screenVideoRef}
+              autoPlay
+              playsInline
+              controls
+              muted={isLocalScreen}
+              className="h-full w-full object-contain bg-black"
+            />
+          </div>
+        ) : (
+        <>
         {/* 1. Empty State */}
         {!hasVideo && (
           <div className="flex h-full w-full flex-col items-center justify-center bg-white/5 backdrop-blur-md p-6 text-center">
@@ -646,17 +693,41 @@ export function VideoPlayer({
               Rạp Phim Sẵn Sàng Chiếu!
             </h3>
             <p className="mt-2 max-w-md text-xs sm:text-sm text-teal-100/85 font-medium leading-relaxed">
-              Dán link <span className="text-teal-200 font-bold">YouTube</span>, link phim trực tiếp{' '}
-              <span className="text-emerald-200 font-bold">.mp4 / .m3u8 (HLS)</span> hoặc link trang web phim vào thanh bên trên để cả phòng cùng thưởng thức.
+              Dán link <span className="text-teal-200 font-bold">YouTube, Facebook, Google Drive, TikTok, .mp4 / .m3u8</span> hoặc bấm <span className="text-emerald-200 font-bold">🖥️ Chiếu Tab / Màn hình</span> để xem Netflix &amp; mọi web phim trên Google!
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 text-xs font-bold text-white/90">
               <span className="rounded-xl bg-white/12 border border-white/25 px-3.5 py-2 backdrop-blur-md">
                 🎬 Tự động đồng bộ Play / Pause / Tua phim
               </span>
               <span className="rounded-xl bg-white/12 border border-white/25 px-3.5 py-2 backdrop-blur-md">
-                🎙️ Voice Chat thời gian thực
+                🖥️ Chiếu Tab Netflix / Web Phim
               </span>
             </div>
+          </div>
+        )}
+
+        {/* 1b. DRM Blocked Platform Helper (Netflix, FPT Play, VieON...) */}
+        {hasVideo && videoState.type === 'drm_blocked' && (
+          <div className="flex h-full w-full flex-col items-center justify-center bg-slate-950/75 backdrop-blur-md p-6 text-center">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/20 border border-rose-300/35 text-rose-200">
+              <MonitorUp className="h-8 w-8" />
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white">
+              {videoState.provider || 'Trang này'} chặn nhúng trực tiếp do bảo mật DRM
+            </h3>
+            <p className="mt-2 max-w-md text-xs sm:text-sm text-teal-100/85 leading-relaxed">
+              Các nền tảng như Netflix, FPT Play, VieON không cho phép nhúng link vào trang khác. Cách xem chung mượt nhất là mở phim ở 1 tab trình duyệt rồi bấm nút bên dưới để chiếu cho cả phòng!
+            </p>
+            {onStartScreenShare && (
+              <button
+                type="button"
+                onClick={onStartScreenShare}
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl btn-3d-pink px-5 py-2.5 text-xs sm:text-sm font-extrabold cursor-pointer"
+              >
+                <MonitorUp className="h-4 w-4" />
+                Chiếu Tab / Màn Hình Ngay (Có tiếng)
+              </button>
+            )}
           </div>
         )}
 
@@ -720,6 +791,8 @@ export function VideoPlayer({
               referrerPolicy="no-referrer"
             />
           </div>
+        )}
+        </>
         )}
 
         {/* 5. Floating Emoji Reactions Overlay */}

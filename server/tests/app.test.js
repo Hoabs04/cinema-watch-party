@@ -161,7 +161,8 @@ describe('client/src/utils/videoParser.js - Video URL Parsing', () => {
     assert.deepEqual(ytWatch, {
       type: 'youtube',
       videoId: 'dQw4w9WgXcQ',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      provider: 'YouTube'
     });
 
     // youtu.be
@@ -179,7 +180,8 @@ describe('client/src/utils/videoParser.js - Video URL Parsing', () => {
     assert.deepEqual(mp4, {
       type: 'video',
       videoId: '',
-      url: 'https://cdn.example.com/movies/sample.mp4?token=123'
+      url: 'https://cdn.example.com/movies/sample.mp4?token=123',
+      provider: 'Direct Video'
     });
 
     // HLS .m3u8
@@ -187,16 +189,37 @@ describe('client/src/utils/videoParser.js - Video URL Parsing', () => {
     assert.deepEqual(hls, {
       type: 'hls',
       videoId: '',
-      url: 'https://stream.example.com/live/playlist.m3u8'
+      url: 'https://stream.example.com/live/playlist.m3u8',
+      provider: 'HLS Stream'
     });
 
-    // Generic iframe fallback
-    const iframe = parseVideoUrl('https://player.vimeo.com/video/76979871');
-    assert.deepEqual(iframe, {
-      type: 'iframe',
-      videoId: '',
-      url: 'https://player.vimeo.com/video/76979871'
-    });
+    // Facebook video -> plugins/video.php
+    const fb = parseVideoUrl('https://www.facebook.com/watch/?v=123456789');
+    assert.equal(fb.type, 'iframe');
+    assert.equal(fb.provider, 'Facebook');
+    assert.ok(fb.url.includes('facebook.com/plugins/video.php'));
+
+    // Google Drive -> /preview
+    const gdrive = parseVideoUrl('https://drive.google.com/file/d/1AbCDefGhIjk/view?usp=sharing');
+    assert.equal(gdrive.type, 'iframe');
+    assert.equal(gdrive.provider, 'Google Drive');
+    assert.equal(gdrive.url, 'https://drive.google.com/file/d/1AbCDefGhIjk/preview');
+
+    // TikTok -> /embed/v2/
+    const tt = parseVideoUrl('https://www.tiktok.com/@user/video/7123456789012345678');
+    assert.equal(tt.type, 'iframe');
+    assert.equal(tt.provider, 'TikTok');
+    assert.equal(tt.url, 'https://www.tiktok.com/embed/v2/7123456789012345678');
+
+    // Netflix -> drm_blocked
+    const nf = parseVideoUrl('https://www.netflix.com/watch/80057281');
+    assert.equal(nf.type, 'drm_blocked');
+    assert.equal(nf.provider, 'netflix.com');
+
+    // Pasted <iframe src="..."> snippet
+    const snippet = parseVideoUrl('<iframe src="https://player.vimeo.com/video/76979871" allowfullscreen></iframe>');
+    assert.equal(snippet.type, 'iframe');
+    assert.equal(snippet.url, 'https://player.vimeo.com/video/76979871');
 
     // Invalid input
     assert.equal(parseVideoUrl(''), null);

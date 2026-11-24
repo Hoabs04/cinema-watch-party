@@ -633,6 +633,36 @@ io.on('connection', (socket) => {
     });
   });
 
+  // 10b. Chia sẻ màn hình / Tab phim (Screen Share WebRTC cho Netflix, Web phim, FB...)
+  socket.on('screen-share-state', (payload = {}) => {
+    const room = getRoomBySocket(socket.id);
+    if (!room) return;
+    if (!canControlVideo(room, socket.id) && !canAddVideo(room, socket.id)) return;
+
+    const user = room.users.find((u) => u.id === socket.id);
+    const isSharing = Boolean(payload.isSharing);
+
+    io.to(room.roomId).emit('screen-share-updated', {
+      sharerId: isSharing ? socket.id : null,
+      sharerName: isSharing && user ? user.name : null,
+      isSharing
+    });
+  });
+
+  socket.on('screen-signal', (payload = {}) => {
+    const { targetId, signalData } = payload;
+    if (!targetId || !signalData) return;
+    const room = getRoomBySocket(socket.id);
+    if (!room) return;
+    const targetInRoom = room.users.some((u) => u.id === targetId);
+    if (!targetInRoom) return;
+
+    io.to(targetId).emit('screen-signal', {
+      fromId: socket.id,
+      signalData
+    });
+  });
+
   // 11. Admin tắt mic hoặc mời thành viên ra khỏi phòng
   socket.on('admin-mute-user', (payload = {}) => {
     const room = getRoomBySocket(socket.id);
