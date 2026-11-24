@@ -86,7 +86,9 @@ export default function Room({
   const [messages, setMessages] = useState(() => room?.messages || []);
   const [chatInput, setChatInput] = useState('');
   const [reactions, setReactions] = useState([]);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'voice' | 'chat' for mobile convenience
+  const [activeTab, setActiveTab] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 1024 ? 'chat' : 'all'
+  ); // 'all' | 'voice' | 'chat' for mobile convenience
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [chibiBubbles, setChibiBubbles] = useState({});
   const [highFiveActive, setHighFiveActive] = useState(false);
@@ -1051,38 +1053,38 @@ export default function Room({
           </div>
 
           {/* Floating Reaction Bar + High-Five + Countdown */}
-          <div className="rounded-3xl cinema-card-3d px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-teal-100">
-              <span>Thả cảm xúc:</span>
+          <div className="rounded-2xl sm:rounded-3xl cinema-card-3d px-3 sm:px-4 py-1.5 sm:py-2.5 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold text-teal-100 shrink-0">
+              <span className="hidden sm:inline">Thả cảm xúc:</span>
               {users.length >= 2 && (
                 <button
                   type="button"
                   onClick={handleChibiHighFive}
-                  className="px-2.5 py-1 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/35 text-amber-100 text-[11px] font-bold cursor-pointer"
+                  className="px-2.5 py-1 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/35 text-amber-100 text-[11px] font-bold whitespace-nowrap cursor-pointer"
                   title="Gọi 2 bé Chibi chạy lại cụng ly trong khung chat!"
                 >
-                  🥂 Cụng ly Chibi
+                  🥂 Cụng ly
                 </button>
               )}
               {canControl && (
                 <button
                   type="button"
                   onClick={handleStartCountdown}
-                  className="px-2.5 py-1 rounded-xl bg-teal-400/20 hover:bg-teal-400/30 border border-teal-300/35 text-teal-100 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 rounded-xl bg-teal-400/20 hover:bg-teal-400/30 border border-teal-300/35 text-teal-100 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer"
                   title="Đếm ngược 3-2-1 đồng bộ cả phòng (rất tiện khi xem Iframe)"
                 >
                   <Timer className="w-3.5 h-3.5" />
-                  Đếm 3-2-1
+                  3-2-1
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {REACTION_EMOJIS.map((emoji) => (
                 <button
                   key={emoji}
                   type="button"
                   onClick={() => handleSendReaction(emoji)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl btn-3d-soft flex items-center justify-center text-lg sm:text-xl hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl btn-3d-soft flex items-center justify-center text-base sm:text-xl hover:scale-110 active:scale-95 transition-all cursor-pointer"
                   title={`Thả ${emoji}`}
                 >
                   {emoji}
@@ -1095,51 +1097,51 @@ export default function Room({
         {/* RIGHT COLUMN: Sidebar (Voice Chat + Members & Room Chat) */}
         {!theatreMode && (
         <aside className="flex-1 min-h-0 lg:flex-none w-full lg:w-96 xl:w-[410px] shrink-0 border-t lg:border-t-0 lg:border-l border-white/20 bg-white/10 backdrop-blur-xl flex flex-col lg:h-full">
-          {/* Mobile Tab Switcher */}
-          <div className="flex lg:hidden border-b border-white/15 bg-white/10 p-1.5 gap-1.5">
+          {/* Mobile Tab Switcher with Quick Mic Button */}
+          <div className="flex lg:hidden items-center border-b border-white/15 bg-white/10 p-1.5 gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => setActiveTab('all')}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                activeTab === 'all'
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'chat' || activeTab === 'all'
                   ? 'bg-white/20 text-white'
                   : 'text-white/60'
               }`}
             >
-              Tất cả
+              Chat ({messages.length})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('voice')}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                 activeTab === 'voice'
                   ? 'bg-white/20 text-white'
                   : 'text-white/60'
               }`}
             >
-              Voice &amp; Thành viên ({users.length})
+              Thành viên ({users.length}/{room?.maxUsers || 4})
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                activeTab === 'chat'
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/60'
+              onClick={toggleMic}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer ${
+                isMuted
+                  ? 'bg-white/10 text-white/80'
+                  : 'bg-emerald-500/80 text-white'
               }`}
+              title={isMuted ? 'Bật Mic' : 'Tắt Mic'}
             >
-              Phòng Chat ({messages.length})
+              {isMuted ? <MicOff className="w-3.5 h-3.5 text-rose-300" /> : <Mic className="w-3.5 h-3.5" />}
+              <span>{isMuted ? 'Mic' : 'Đang bật'}</span>
             </button>
           </div>
 
           {/* SECTION 1: Voice Chat & Thành Viên */}
           <div
             className={`flex flex-col border-b border-white/15 ${
-              activeTab === 'chat'
-                ? 'hidden lg:flex lg:h-[46%]'
-                : activeTab === 'voice'
-                ? 'flex-1 lg:h-[46%]'
-                : 'h-60 lg:h-[46%]'
+              activeTab === 'voice'
+                ? 'flex-1 min-h-0 lg:flex-none lg:h-[46%]'
+                : 'hidden lg:flex lg:h-[46%]'
             }`}
           >
             {/* Voice Controls Header */}

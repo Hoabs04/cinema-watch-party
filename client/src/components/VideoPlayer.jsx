@@ -582,8 +582,8 @@ export function VideoPlayer({
   return (
     <div className="relative w-full shrink-0 overflow-hidden rounded-3xl cinema-card-3d shadow-[0_24px_54px_-12px_rgba(10,6,24,0.55)]">
       {/* Top Cinema Control & Status Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 bg-white/10 px-4 py-2.5 text-xs">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-white/15 bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2.5 text-[11px] sm:text-xs">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 font-bold text-teal-100 border border-white/25">
             <Radio className="h-3.5 w-3.5 animate-pulse text-teal-300" />
             {screenStream
@@ -610,13 +610,17 @@ export function VideoPlayer({
           >
             {canControl ? (
               <>
-                <Unlock className="h-3.5 w-3.5 text-emerald-300" />
-                Đang đồng bộ (Bạn có quyền điều khiển)
+                <Unlock className="h-3.5 w-3.5 text-emerald-300 shrink-0" />
+                <span>
+                  Đang đồng bộ<span className="hidden sm:inline"> (Bạn có quyền điều khiển)</span>
+                </span>
               </>
             ) : (
               <>
-                <Lock className="h-3.5 w-3.5 text-teal-200" />
-                Chỉ chủ phòng điều khiển
+                <Lock className="h-3.5 w-3.5 text-teal-200 shrink-0" />
+                <span>
+                  Chỉ chủ phòng<span className="hidden sm:inline"> điều khiển</span>
+                </span>
               </>
             )}
           </span>
@@ -685,17 +689,17 @@ export function VideoPlayer({
         <>
         {/* 1. Empty State */}
         {!hasVideo && (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-white/5 backdrop-blur-md p-6 text-center">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-teal-400/90 to-emerald-500/90 border border-white/35 text-white shadow-[0_6px_0_rgba(17,94,89,0.6),0_16px_30px_rgba(20,184,166,0.35)] animate-float-3d">
-              <Film className="h-10 w-10" />
+          <div className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-white/5 backdrop-blur-md p-3 sm:p-6 text-center">
+            <div className="mb-2 sm:mb-4 flex h-11 w-11 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl sm:rounded-3xl bg-gradient-to-br from-teal-400/90 to-emerald-500/90 border border-white/35 text-white shadow-[0_4px_0_rgba(17,94,89,0.6),0_12px_24px_rgba(20,184,166,0.35)] animate-float-3d">
+              <Film className="h-5 w-5 sm:h-10 sm:w-10" />
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-white drop-shadow">
+            <h3 className="text-sm sm:text-xl font-black text-white drop-shadow">
               Rạp Phim Sẵn Sàng Chiếu!
             </h3>
-            <p className="mt-2 max-w-md text-xs sm:text-sm text-teal-100/85 font-medium leading-relaxed">
-              Dán link <span className="text-teal-200 font-bold">YouTube, Facebook, Google Drive, TikTok, .mp4 / .m3u8</span> hoặc bấm <span className="text-emerald-200 font-bold">🖥️ Chiếu Tab / Màn hình</span> để xem Netflix &amp; mọi web phim trên Google!
+            <p className="mt-1 sm:mt-2 max-w-md text-[11px] sm:text-sm text-teal-100/85 font-medium leading-snug sm:leading-relaxed">
+              Dán link <span className="text-teal-200 font-bold">YouTube, Facebook, Google Drive, TikTok, .mp4 / .m3u8</span> hoặc bấm <span className="text-emerald-200 font-bold">🖥️ Chiếu Tab / Màn hình</span>!
             </p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 text-xs font-bold text-white/90">
+            <div className="mt-2.5 sm:mt-5 hidden sm:flex flex-wrap items-center justify-center gap-2.5 text-xs font-bold text-white/90">
               <span className="rounded-xl bg-white/12 border border-white/25 px-3.5 py-2 backdrop-blur-md">
                 🎬 Tự động đồng bộ Play / Pause / Tua phim
               </span>
