@@ -39,6 +39,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Resolve shortened social video links (e.g. facebook.com/share/v/..., fb.watch, vt.tiktok.com)
+app.get('/api/resolve-url', async (req, res) => {
+  const rawUrl = req.query.url;
+  if (!rawUrl || typeof rawUrl !== 'string') {
+    return res.status(400).json({ error: 'Missing url parameter' });
+  }
+  try {
+    const parsed = new URL(rawUrl.trim());
+    const host = parsed.hostname.toLowerCase();
+    const allowedHosts = ['facebook.com', 'fb.watch', 'tiktok.com'];
+    const isAllowed = allowedHosts.some(
+      (h) => host === h || host.endsWith(`.${h}`)
+    );
+    if (!isAllowed) {
+      return res.json({ resolvedUrl: rawUrl.trim() });
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(parsed.toString(), {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+      }
+    });
+    clearTimeout(timeout);
+    return res.json({ resolvedUrl: response.url || rawUrl.trim() });
+  } catch {
+    return res.json({ resolvedUrl: rawUrl.trim() });
+  }
+});
+
 // Admin Login API
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};

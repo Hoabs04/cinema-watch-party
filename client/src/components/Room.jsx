@@ -297,17 +297,36 @@ export default function Room({
     });
   };
 
-  const applyVideoUrl = (rawUrl) => {
+  const applyVideoUrl = async (rawUrl) => {
     setUrlError('');
     if (!canAddVideo) {
       setUrlError('Chỉ chủ phòng (hoặc khi được cấp quyền) mới được thêm link phim lúc này!');
       return;
     }
 
-    const parsed = parseVideoUrl(rawUrl);
+    let urlToParse = (rawUrl || '').trim();
+    if (
+      /facebook\.com\/share\/|fb\.watch\/|vt\.tiktok\.com\/|vm\.tiktok\.com\//i.test(
+        urlToParse
+      )
+    ) {
+      try {
+        const res = await fetch(
+          `/api/resolve-url?url=${encodeURIComponent(urlToParse)}`
+        );
+        const data = await res.json();
+        if (data?.resolvedUrl) {
+          urlToParse = data.resolvedUrl;
+        }
+      } catch {
+        // Fallback to original URL
+      }
+    }
+
+    const parsed = parseVideoUrl(urlToParse);
     if (!parsed) {
       setUrlError(
-        'Đường dẫn không hợp lệ! Hãy dán link YouTube, .mp4, .m3u8 hoặc link web https://'
+        'Đường dẫn không hợp lệ! Hãy dán link YouTube, Facebook, Google Drive, TikTok, .mp4, .m3u8 hoặc mã <iframe>'
       );
       return;
     }
@@ -650,9 +669,9 @@ export default function Room({
           <div className="rounded-3xl cinema-card-3d p-3 space-y-2.5 shrink-0">
             <form
               onSubmit={handleUrlSubmit}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+              className="flex flex-wrap items-center gap-2"
             >
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-w-[220px]">
                 <Link2 className="w-4 h-4 text-teal-200/80 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"

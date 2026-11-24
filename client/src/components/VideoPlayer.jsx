@@ -856,23 +856,35 @@ export function VideoPlayer({
       </div>
 
       {/* Info Banner for Web Iframe Embed */}
-      {hasVideo && videoState.type === 'iframe' && (
+      {!screenStream && hasVideo && videoState.type === 'iframe' && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/15 bg-white/10 px-4 py-2.5 text-xs text-teal-100">
           <div className="flex items-start sm:items-center gap-2">
             <Info className="h-4 w-4 shrink-0 text-teal-300 mt-0.5 sm:mt-0" />
             <span>
-              <strong>Chế độ Nhúng Web (Iframe):</strong> Do bảo mật trình duyệt (Cross-Origin), trình phát của web thứ 3 không tự động đồng bộ nút Play/Pause. Cả phòng hãy hô 1-2-3 qua Mic/Chat để bấm Play cùng lúc nhé! (Nếu web chặn nhúng, hãy dùng link trực tiếp <code>.m3u8</code> / <code>.mp4</code> hoặc bấm mở tab mới).
+              <strong>Nếu thấy mặt buồn / từ chối kết nối:</strong> Web phim gốc đã chặn nhúng vào khung trang khác. Hãy mở link đó ở 1 tab mới rồi bấm nút <strong>Chiếu Tab/Màn hình</strong> bên cạnh!
             </span>
           </div>
-          <a
-            href={videoState.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl btn-3d-soft px-3 py-1 font-bold text-white"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Mở tab mới
-          </a>
+          <div className="flex items-center gap-2 shrink-0">
+            {onStartScreenShare && (
+              <button
+                type="button"
+                onClick={onStartScreenShare}
+                className="inline-flex items-center gap-1.5 rounded-xl btn-3d-pink px-3 py-1 font-bold text-white cursor-pointer"
+              >
+                <MonitorUp className="h-3.5 w-3.5" />
+                Chiếu Tab phim
+              </button>
+            )}
+            <a
+              href={videoState.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-xl btn-3d-soft px-3 py-1 font-bold text-white"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Mở tab mới
+            </a>
+          </div>
         </div>
       )}
     </div>
