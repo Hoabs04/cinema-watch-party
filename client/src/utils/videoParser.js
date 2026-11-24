@@ -16,6 +16,12 @@ export function parseVideoUrl(rawInput) {
   const iframeSrcMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
   if (iframeSrcMatch && iframeSrcMatch[1]) {
     trimmed = iframeSrcMatch[1].trim();
+  } else {
+    // Extract first http(s) URL if user pasted share text from mobile apps (e.g. TikTok/FB share text)
+    const urlExtractMatch = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+    if (urlExtractMatch && urlExtractMatch[0]) {
+      trimmed = urlExtractMatch[0].trim();
+    }
   }
 
   // Validate http/https protocol

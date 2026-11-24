@@ -340,6 +340,10 @@ export default function Room({
     }
 
     let urlToParse = (rawUrl || '').trim();
+    const extracted = urlToParse.match(/https?:\/\/[^\s"'<>]+/i);
+    if (extracted && extracted[0] && !urlToParse.includes('<iframe')) {
+      urlToParse = extracted[0].trim();
+    }
     if (
       /facebook\.com\/share\/|fb\.watch\/|vt\.tiktok\.com\/|vm\.tiktok\.com\//i.test(
         urlToParse
